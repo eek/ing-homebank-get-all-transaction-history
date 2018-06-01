@@ -29,7 +29,7 @@ Yes, the script has some variables you can change!
 They are:
 
 - `account` - integer to specify which account you want (if you have just one leave 0, if you want to download from the 2nd account, change to 1, and so on...)
-- `fromDate` - the date from which to get transactions, by default it's `01-01-2008`, it needs to be in `DD-MM-YYYY` format
+- `fromDate` - the date from which to get transactions, by default it's `01-01-2008`, it needs to be in `DD-MM-YYYY` format. Be careful: choose a date AFTER your ING Bank account creation date, the dataset might be incomplete otherwise.
 - `toDate` - the last date of transactions you want - `defaults to today`.
 - `transactionsLimit` - the limit of transactions to download - default to `100000`
 
