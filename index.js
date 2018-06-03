@@ -1,7 +1,10 @@
 async function getTransactions() {
-  // What account? It might be 0 or it might be 1 (especially if you have 2 account)
-  // If you have just 1 account, it's most likely 0.
+  // What account? 0 will be the first account, n will be the nth account
   let account = 0;
+
+  // If you want to not include pending transactions
+  // change the following to `false`
+  let includePending = true;
 
   // Set the limit of transactions
   let transactionsLimit = 100000;
@@ -21,25 +24,71 @@ async function getTransactions() {
   // The API Token also called Orchard Token in requests
   let orchardToken = hbPS['hb-apitoken'][0];
 
-  // Request data - await for result
-  const transactions = await fetch(`https://www.homebank.ro/hb-restapi/hb-restapi/api-v1/accounts/${account}/transactions?t=${new Date().getTime()}&fromDate=${fromDate}&limit=${transactionsLimit}&offset=0&toDate=${toDate}`,
-    {
-      credentials: "same-origin",
-      headers: {
-        "Orchard-Token": orchardToken
-      }
+  const headers = {
+    credentials: "same-origin",
+    headers: {
+      "Orchard-Token": orchardToken
     }
-  ).then(res => res.text());
+  };
+
+  // Get all Accounts List
+  let getAccountsRaw = await fetch(`https://www.homebank.ro/hb-restapi/hb-restapi/api-v1/accounts?t=${new Date().getTime()}&selfPayment=false&showClosedAccounts=true&showMutualFundsAccounts=true&showWallet=false`, headers)
+    .then(res => res.text());
+
+  // Remove the first 6 non-valid JSON characters before parsing
+  getAccountsRaw = getAccountsRaw.substring(6);
+
+  // Parse the accounts (String to JS)
+  const accounts = JSON.parse(getAccountsRaw);
+
+  // Get Current Account Details
+  const currentAccount = accounts[account];
+
+  // Get the requested account from Account Details
+  const currentAccountID = currentAccount.id;
+
+  // get the accountNumber to filter pendingTransactions just for this one.
+  const currentAccountNumber = currentAccount.accountNumber;
+
+  // Request Transactions - await for result
+  let transactionsRaw = await fetch(`https://www.homebank.ro/hb-restapi/hb-restapi/api-v1/accounts/${currentAccountID}/transactions?t=${new Date().getTime()}&fromDate=${fromDate}&limit=${transactionsLimit}&offset=0&toDate=${toDate}`, headers)
+    .then(res => res.text());
+
+  // Remove the first 6 non-valid JSON characters before parsing
+  transactionsRaw = transactionsRaw.substring(6);
+
+  // Parse them to get an JS array
+  const transactions = JSON.parse(transactionsRaw);
+  let pendingTransactions = [];
+
+  // IF we want to include pending, do the following:
+  if (includePending) {
+    // Request pending Transactions
+    let pendingTransactionsRaw = await fetch(`https://www.homebank.ro/hb-restapi/hb-restapi/api-v1/pendingtransactions?t=${new Date().getTime()}`, headers)
+      .then(res => res.text());
+
+    // Remove the first 6 non-valid JSON characters before parsing
+    pendingTransactionsRaw = pendingTransactionsRaw.substring(6);
+
+    // Parse them to get an JS array
+    // Filter the transactions to just the account we're requesting info for
+    pendingTransactions = JSON.parse(pendingTransactionsRaw)
+      .filter((el) => el.accountNo === currentAccountNumber);
+  }
+
+  // Concat all into an unique array
+  const transactionsAll = pendingTransactions.concat(transactions);
 
   // We need to download the data so let's create an anchor to keep the date
   let el = document.createElement('a');
 
   // Create URL Object - faster than appending MB of data directly in the DOM
-  // We also need to start from position 6, they append some weird closing thingie at the beginning lol.
-  el.href = window.URL.createObjectURL(new Blob([transactions.substring(6)], {type: 'text/csv'}));
+  // Stringify them before adding them to a blob.
+  el.href = window.URL.createObjectURL(new Blob([JSON.stringify(transactionsAll)], {type: 'text/csv'}));
 
   // Set the URL as a download and the property as the filname
-  el.download = `ING_Transactions_${fromDate}_to_${toDate}.json`;
+  // Add account Number, ID, fromDate and toDate
+  el.download = `ING_Transactions_account_${currentAccountNumber}_id_${currentAccountID}_${fromDate}_to_${toDate}.json`;
 
   // No need to show it
   el.style.display = 'none';

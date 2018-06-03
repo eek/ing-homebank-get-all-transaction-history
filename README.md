@@ -28,7 +28,8 @@ Yes, the script has some variables you can change!
 
 They are:
 
-- `account` - integer to specify which account you want (if you have just one leave 0, if you have more accounts, it might be possible that your first account to be the last account number (if you have 3 accounts, the first one might be `account 2`)
+- `account` - integer to specify which account you want (0 is your first - default and n is your nth)
+- `includePending` - include Pending Transactions - default `true`, set to `false` to not include pending.
 - `fromDate` - the date from which to get transactions, by default it's `01-01-2008`, it needs to be in `DD-MM-YYYY` format
 - `toDate` - the last date of transactions you want - `defaults to today`.
 - `transactionsLimit` - the limit of transactions to download - default to `100000`
