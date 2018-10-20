@@ -22,7 +22,7 @@ async function getTransactions() {
   let hbPS = JSON.parse(localStorage.getItem('hb-ps'));
 
   // The API Token also called Orchard Token in requests
-  let orchardToken = hbPS['hb-apitoken'][0];
+  let orchardToken = hbPS['hb-apitoken'][0]['v'];
 
   const headers = {
     credentials: "same-origin",
